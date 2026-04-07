@@ -9,28 +9,15 @@ Const EXPORT_PATH As String = "C:\Users\jvand\OneDrive\Walz\998 VBA Projects\Loo
 Public Sub ExportVBAModules()
     Dim vbComp As Object
     Dim filePath As String
-    Dim newExport_Path As String
     
-    If Dir(EXPORT_PATH, vbDirectory) = "" Then
+    If Not ExportPathExists() Then
         MsgBox "Export folder not found: " & EXPORT_PATH, vbCritical
         Exit Sub
     End If
     
     For Each vbComp In ThisWorkbook.VBProject.VBComponents
-        Select Case vbComp.Type
-            Case 1 ' Standard module, Class, Form
-                newExport_Path = EXPORT_PATH & "standard_modules\"
-                filePath = newExport_Path & vbComp.Name & FileExtension(vbComp.Type)
-                vbComp.Export filePath
-            Case 2
-                newExport_Path = EXPORT_PATH & "class_modules\"
-                filePath = newExport_Path & vbComp.Name & FileExtension(vbComp.Type)
-                vbComp.Export filePath
-            Case 3
-                newExport_Path = EXPORT_PATH & "userforms\"
-                filePath = newExport_Path & vbComp.Name & FileExtension(vbComp.Type)
-                vbComp.Export filePath
-        End Select
+        filePath = BuildComponentExportPath(vbComp)
+        If Len(filePath) > 0 Then vbComp.Export filePath
     Next vbComp
     
     MsgBox "Modules exported to: " & EXPORT_PATH, vbInformation
@@ -40,7 +27,7 @@ End Sub
 Public Sub ImportVBAModules()
     Dim fso As Object, folder As Object, file As Object
     
-    If Dir(EXPORT_PATH, vbDirectory) = "" Then
+    If Not ExportPathExists() Then
         MsgBox "Import folder not found: " & EXPORT_PATH, vbCritical
         Exit Sub
     End If
@@ -58,6 +45,31 @@ Public Sub ImportVBAModules()
     
     MsgBox "Modules imported from: " & EXPORT_PATH, vbInformation
 End Sub
+
+' Validate export/import base path once.
+Private Function ExportPathExists() As Boolean
+    ExportPathExists = (Dir(EXPORT_PATH, vbDirectory) <> "")
+End Function
+
+' Build full export target path for a component; returns "" for unsupported types.
+Private Function BuildComponentExportPath(ByVal vbComp As Object) As String
+    Dim exportFolder As String
+    
+    exportFolder = ComponentFolder(vbComp.Type)
+    If Len(exportFolder) = 0 Then Exit Function
+    
+    BuildComponentExportPath = EXPORT_PATH & exportFolder & "\" & vbComp.Name & FileExtension(vbComp.Type)
+End Function
+
+' Map VB component type to folder name.
+Private Function ComponentFolder(ByVal compType As Long) As String
+    Select Case compType
+        Case 1: ComponentFolder = "standard_modules"
+        Case 2: ComponentFolder = "class_modules"
+        Case 3: ComponentFolder = "userforms"
+        Case Else: ComponentFolder = ""
+    End Select
+End Function
 
 ' Helper function to get correct file extension
 Private Function FileExtension(compType As Long) As String
