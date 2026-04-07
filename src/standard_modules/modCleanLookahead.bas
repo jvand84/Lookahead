@@ -87,7 +87,7 @@ Public Sub Clean_tblLookahead_BlankRows()
     ' Do not delete during scan
     '--------------------------------------------------------------------------
     For i = 1 To rowCount
-        If Trim$(CStr(col1Arr(i, 1))) = vbNullString Then
+        If IsBlankKeyValue(col1Arr(i, 1)) Then
             delCount = delCount + 1
             deleteIdx(delCount) = i
         Else
@@ -117,26 +117,34 @@ Public Sub Clean_tblLookahead_BlankRows()
     ' Ensure final row is the single spare blank row
     '--------------------------------------------------------------------------
     If Not lo.DataBodyRange Is Nothing Then
-        lo.DataBodyRange.Rows(lo.DataBodyRange.Rows.Count).ClearContents
+        ClearLastTableRow lo
     End If
 
 SafeExit:
-    On Error Resume Next
-    
-    SheetGuard_End ws, shState
-    AppGuard_End
-    
-    On Error GoTo 0
+    EndGuards ws, shState
     Exit Sub
 
 ErrHandler:
+    EndGuards ws, shState
+End Sub
+
+Private Function IsBlankKeyValue(ByVal v As Variant) As Boolean
+    IsBlankKeyValue = (Trim$(CStr(v)) = vbNullString)
+End Function
+
+Private Sub ClearLastTableRow(ByVal lo As ListObject)
+    If lo Is Nothing Then Exit Sub
+    If lo.DataBodyRange Is Nothing Then Exit Sub
+
+    lo.DataBodyRange.Rows(lo.DataBodyRange.Rows.Count).ClearContents
+End Sub
+
+Private Sub EndGuards(ByVal ws As Worksheet, ByRef shState As TSheetGuardState)
     On Error Resume Next
-    
-    'LogError PROC_NAME, Err.Number, Err.description
-    
-    SheetGuard_End ws, shState
+
+    If Not ws Is Nothing Then SheetGuard_End ws, shState
     AppGuard_End
-    
+
     On Error GoTo 0
 End Sub
 

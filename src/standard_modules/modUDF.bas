@@ -36,6 +36,7 @@ Public Function VisibleUniqueList(ByVal rng As Range, Optional ByVal Trigger As 
     Dim area As Range
     Dim cell As Range
     Dim v As Variant
+    Dim s As String
     Dim arrOut() As Variant
     Dim i As Long
     
@@ -71,23 +72,9 @@ Public Function VisibleUniqueList(ByVal rng As Range, Optional ByVal Trigger As 
                 
                 ' Skip errors
                 If Not IsError(v) Then
-                    
-                    ' Convert once for consistency
-                    Dim s As String
                     s = Trim$(CStr(v))
-                    
-                    ' --- FILTER LOGIC ---
-                    ' Exclude:
-                    '   - blanks ("")
-                    '   - zero values (0 or "0")
-                    If Len(s) > 0 Then
-                        If s <> "0" Then
-                            
-                            If Not dict.Exists(s) Then
-                                dict.Add s, v
-                            End If
-                            
-                        End If
+                    If ShouldIncludeValue(s) Then
+                        If Not dict.Exists(s) Then dict.Add s, v
                     End If
                     
                 End If
@@ -113,4 +100,8 @@ Public Function VisibleUniqueList(ByVal rng As Range, Optional ByVal Trigger As 
 
 CleanFail:
     VisibleUniqueList = vbNullString
+End Function
+
+Private Function ShouldIncludeValue(ByVal s As String) As Boolean
+    ShouldIncludeValue = (Len(s) > 0 And s <> "0")
 End Function
